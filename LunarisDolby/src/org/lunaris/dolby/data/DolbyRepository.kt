@@ -68,6 +68,29 @@ class DolbyRepository(private val context: Context) : AutoCloseable {
         }
     }
 
+    fun hasEffectControl(): Boolean {
+        if (isReleased) return false
+        return try {
+            dolbyEffect.hasControl()
+        } catch (e: Exception) {
+            false
+        }
+    }
+
+    fun checkAndRestoreIfLost() {
+        if (isReleased) return
+        try {
+            if (!dolbyEffect.hasControl()) {
+                DolbyConstants.dlog(TAG, "Lost audio effect control during playback, restoring")
+                dolbyEffect.release()
+                dolbyEffect = createDolbyEffect()
+                applySavedState()
+            }
+        } catch (e: Exception) {
+            DolbyConstants.dlog(TAG, "Error checking effect control: ${e.message}")
+        }
+    }
+
     private fun readSavedProfile(): Int? {
         return defaultPrefs.getString(DolbyConstants.PREF_PROFILE, null)
             ?.toIntOrNull()
@@ -106,8 +129,10 @@ class DolbyRepository(private val context: Context) : AutoCloseable {
             val dialogueAmount = prefs.getInt(DolbyConstants.PREF_DIALOGUE_AMOUNT, 6)
             dolbyEffect.setDapParameter(DsParam.DIALOGUE_ENHANCER_AMOUNT, dialogueAmount, profile)
             
-            val bassEnabled = prefs.getBoolean(DolbyConstants.PREF_BASS, false)
-            dolbyEffect.setDapParameter(DsParam.BASS_ENHANCER_ENABLE, bassEnabled, profile)
+            if (checkIsOnSpeaker()) {
+                val bassEnabled = prefs.getBoolean(DolbyConstants.PREF_BASS, false)
+                dolbyEffect.setDapParameter(DsParam.BASS_ENHANCER_ENABLE, bassEnabled, profile)
+            }
             
             if (volumeLevelerSupported) {
                 val volumeLeveler = prefs.getBoolean(DolbyConstants.PREF_VOLUME, false)
@@ -121,7 +146,7 @@ class DolbyRepository(private val context: Context) : AutoCloseable {
     }
 
     fun applySavedState() {
-    checkEffect()
+        checkEffect()
         val enabled = defaultPrefs.getBoolean(DolbyConstants.PREF_ENABLE, false)
         dolbyEffect.dsOn = enabled
         if (enabled) {
@@ -129,10 +154,10 @@ class DolbyRepository(private val context: Context) : AutoCloseable {
         }
     }
 
-    private fun checkIsOnSpeaker(): Boolean {
+    fun checkIsOnSpeaker(): Boolean {
         return try {
-            val device = audioManager.getDevicesForAttributes(ATTRIBUTES_MEDIA)[0]
-            device.type == AudioDeviceInfo.TYPE_BUILTIN_SPEAKER
+            val devices = audioManager.getDevicesForAttributes(ATTRIBUTES_MEDIA)
+            devices.firstOrNull()?.type == AudioDeviceInfo.TYPE_BUILTIN_SPEAKER
         } catch (e: Exception) {
             DolbyConstants.dlog(TAG, "Error checking speaker state: ${e.message}")
             false
@@ -169,7 +194,6 @@ class DolbyRepository(private val context: Context) : AutoCloseable {
     fun getCurrentProfile(): Int {
         return try {
             checkEffect()
-            restoreSavedProfileIfNeeded()
             dolbyEffect.profile
         } catch (e: Exception) {
             DolbyConstants.dlog(TAG, "Error getting current profile: ${e.message}")
@@ -251,7 +275,9 @@ class DolbyRepository(private val context: Context) : AutoCloseable {
         
         try {
             checkEffect()
-            dolbyEffect.setDapParameter(DsParam.BASS_ENHANCER_ENABLE, enabled, profile)
+            if (checkIsOnSpeaker()) {
+                dolbyEffect.setDapParameter(DsParam.BASS_ENHANCER_ENABLE, enabled, profile)
+            }
             getProfilePrefs(profile).edit().putBoolean(DolbyConstants.PREF_BASS, enabled).apply()
         } catch (e: Exception) {
             DolbyConstants.dlog(TAG, "Error setting bass enhancer: ${e.message}")

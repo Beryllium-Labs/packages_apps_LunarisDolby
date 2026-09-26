@@ -11,19 +11,16 @@ import android.service.notification.StatusBarNotification
 import android.util.Log
 import org.lunaris.dolby.DolbyConstants
 import org.lunaris.dolby.data.AppProfileManager
-import org.lunaris.dolby.data.DolbyRepository
 
 class DolbyNotificationListener : NotificationListenerService() {
 
     private lateinit var appProfileManager: AppProfileManager
-    private lateinit var dolbyRepository: DolbyRepository
     private var lastActivePackage: String? = null
 
     override fun onCreate() {
         super.onCreate()
         DolbyConstants.dlog(TAG, "NotificationListener created")
         appProfileManager = AppProfileManager(this)
-        dolbyRepository = DolbyRepository(this)
         initializeDolbySettings()
         startAppProfileMonitoringIfEnabled()
     }
@@ -58,12 +55,10 @@ class DolbyNotificationListener : NotificationListenerService() {
     private fun initializeDolbySettings() {
         try {
             val prefs = getSharedPreferences("dolby_prefs", MODE_PRIVATE)
-            val savedProfile = prefs.getString(DolbyConstants.PREF_PROFILE, "0")?.toIntOrNull() ?: 0
             val enabled = prefs.getBoolean(DolbyConstants.PREF_ENABLE, false)
-            DolbyConstants.dlog(TAG, "Initializing Dolby - enabled: $enabled, profile: $savedProfile")
+            DolbyConstants.dlog(TAG, "Initializing Dolby - enabled: $enabled")
             if (enabled) {
-                dolbyRepository.setCurrentProfile(savedProfile)
-                dolbyRepository.setDolbyEnabled(true)
+                DolbyEffectService.start(this)
             }
         } catch (e: Exception) {
             Log.e(TAG, "Failed to initialize Dolby settings", e)
