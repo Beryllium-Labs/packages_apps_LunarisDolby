@@ -21,7 +21,7 @@ import kotlinx.coroutines.flow.asStateFlow
 
 class DolbyRepository(private val context: Context) : AutoCloseable {
 
-    private val audioManager = context.getSystemService(AudioManager::class.java)
+    private val audioManager = context.getSystemService(AudioManager::class.java)!!
     private var dolbyEffect = createDolbyEffect()
     
     private val defaultPrefs = context.getSharedPreferences("dolby_prefs", Context.MODE_PRIVATE)

@@ -23,7 +23,7 @@ import org.lunaris.dolby.data.DolbyRepository
 
 class DolbyEffectService : Service() {
 
-    private val audioManager by lazy { getSystemService(AudioManager::class.java) }
+    private val audioManager by lazy { getSystemService(AudioManager::class.java)!! }
     private val dolbyPrefs: SharedPreferences by lazy {
         getSharedPreferences("dolby_prefs", Context.MODE_PRIVATE)
     }

@@ -30,7 +30,7 @@ class DolbyActivity : ComponentActivity() {
     private val dolbyViewModel: DolbyViewModel by viewModels()
     private val equalizerViewModel: EqualizerViewModel by viewModels()
     
-    private val audioManager by lazy { getSystemService(AudioManager::class.java) }
+    private val audioManager by lazy { getSystemService(AudioManager::class.java)!! }
     private val handler = Handler(Looper.getMainLooper())
     
     private var isAudioCallbackRegistered = false
