@@ -86,6 +86,7 @@ class DolbyAudioEffect(priority: Int, audioSession: Int) : AudioEffect(
     companion object {
         private const val TAG = "DolbyAudioEffect"
         private val EFFECT_TYPE_DAP = UUID.fromString("9d4921da-8225-4f29-aefa-39537a04bcaa")
+        private val EFFECT_TYPE_NULL = UUID.fromString("ec7178ec-e5e1-4432-a3f4-4f4a73b4e054")
 
         private const val EFFECT_PARAM_ENABLE = 0
         private const val EFFECT_PARAM_CPDP_VALUES = 5
